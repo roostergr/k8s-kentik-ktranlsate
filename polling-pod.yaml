@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.26.1 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: ktranslate-polling
+  name: snmp-int
+spec:
+  containers:
+    - args:
+        - -snmp
+        - /snmp-base.yaml
+        - -nr_account_id=$ACCOUNT_ID
+        - -log_level=info
+        - -metrics=jchf
+        - -tee_logs=true
+        - -service_name=snmp
+        - nr1.snmp
+      env:
+        - name: NEW_RELIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: secret
+              key: api.txt
+      image: kentik/ktranslate:v2
+      name: snmp-int
+      resources: {}
+      volumeMounts:
+        - mountPath: /snmp-base.yaml
+          name: ktranslate-discovery-claim
+  restartPolicy: OnFailure
+  volumes:
+    - name: ktranslate-discovery-claim
+      hostPath:
+        path: /mnt/data/snmp-base.yaml
+status: {}

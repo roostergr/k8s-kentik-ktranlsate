@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.26.1 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: ktranslate-discovery
+  name: ktranslate-discovery
+spec:
+  containers:
+    - args:
+        - -snmp
+        - /snmp-base.yaml
+        - -log_level=info
+        - -snmp_discovery=true
+      image: kentik/ktranslate:v2
+      name: ktranslate-discovery
+      resources: {}
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: /snmp-base.yaml
+          name: ktranslate-discovery-claim
+  restartPolicy: OnFailure
+  volumes:
+    - name: ktranslate-discovery-claim
+      hostPath:
+        path: /mnt/data/snmp-base.yaml
+status: {}
