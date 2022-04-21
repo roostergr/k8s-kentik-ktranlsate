@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: snmp-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Mi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ktranslate
+  namespace: default
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsUser: 0
+  containers:
+  - name: ktranslate-poll
+    image: kentik/ktranslate:v2
+    imagePullPolicy: Always
+    args:
+      - -snmp
+      - /data/snmp-base.yaml
+      - -nr_account_id=${ACCOUNTID}
+      - -log_level=info
+      - -metrics=jchf
+      - -tee_logs=false
+      - -service_name=snmp
+      - nr1.snmp
+    env:
+      - name: NEW_RELIC_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: secret-test
+            key: api.txt
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 256Mi
+      requests:
+        cpu: 500m
+        memory: 128Mi
+    volumeMounts:
+    - name: snmp-test
+      mountPath: /data
+  volumes:
+  - name: snmp-test
+    persistentVolumeClaim:
+      claimName: snmp-pvc
+  initContainers:
+  - name: ktranslate-discovery
+    image: kentik/ktranslate:v2
+    imagePullPolicy: Always
+    args:
+        - -snmp
+        - /data/snmp-base.yaml
+        - -log_level=info
+        - -snmp_discovery=true
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 256Mi
+      requests:
+        cpu: 500m
+        memory: 128Mi
+    volumeMounts:
+    - name: snmp-test
+      mountPath: /data
